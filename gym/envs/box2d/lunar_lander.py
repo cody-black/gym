@@ -89,7 +89,7 @@ class LunarLander(gym.Env, EzPickle):
     zone_move = False
     limited_fuel = False
     fuel = 30 # Initial amount of fuel that the lander has. TODO: tweak this if needed
-    rand_diff = 500
+    rand_diff = 0
 
     def __init__(self):
         EzPickle.__init__(self)
