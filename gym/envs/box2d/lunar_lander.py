@@ -399,6 +399,10 @@ class LunarLanderContinuous(LunarLander):
 class LunarLanderRandomZone(LunarLander):
     rand_zone = True
 
+class LunarLanderMoreRandStart(LunarLander):
+    global INITIAL_RANDOM
+    INITIAL_RANDOM = 1500 # Probably not good practice to change a constant like this but just this once
+
 def heuristic(env, s):
     """
     The heuristic for
