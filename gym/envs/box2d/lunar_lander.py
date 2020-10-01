@@ -86,6 +86,7 @@ class LunarLander(gym.Env, EzPickle):
 
     continuous = False
     rand_zone = False
+    zone_move = False
     limited_fuel = False
     fuel = 30 # Initial amount of fuel that the lander has. TODO: tweak this if needed
 
@@ -142,11 +143,18 @@ class LunarLander(gym.Env, EzPickle):
 
         # terrain
         CHUNKS = 11
-        height = self.np_random.uniform(0, H/2, size=(CHUNKS+1,))
+        if self.zone_move:
+            height = [H/4] * (CHUNKS + 1)
+        else:
+            height = self.np_random.uniform(0, H/2, size=(CHUNKS+1,))
         chunk_x = [W/(CHUNKS-1)*i for i in range(CHUNKS)]
-        if (self.rand_zone):
+        if self.rand_zone:
             zone_left_i = self.np_random.randint(1, CHUNKS - 3)
             zone_right_i = zone_left_i + 2
+        elif self.zone_move:
+            zone_left_i = 0
+            zone_right_i = 2
+            pass
         else:
             zone_left_i = CHUNKS//2-1
             zone_right_i = CHUNKS//2+1
@@ -163,7 +171,10 @@ class LunarLander(gym.Env, EzPickle):
         # height[CHUNKS//2+0] = self.helipad_y
         # height[CHUNKS//2+1] = self.helipad_y
         # height[CHUNKS//2+2] = self.helipad_y
-        smooth_y = [0.33*(height[i-1] + height[i+0] + height[i+1]) for i in range(CHUNKS)]
+        if self.zone_move:
+            smooth_y = height
+        else:
+            smooth_y = [0.33*(height[i-1] + height[i+0] + height[i+1]) for i in range(CHUNKS)]
 
         self.moon = self.world.CreateStaticBody(shapes=edgeShape(vertices=[(0, 0), (W, 0)]))
         self.sky_polys = []
@@ -345,13 +356,12 @@ class LunarLander(gym.Env, EzPickle):
             if self.fuel < 0:
                 self.fuel = 0 # Stop fuel from being negative
         else:
+            # TODO: should using thrusters always decrease reward, regardless of whether fuel is limited or not?
             reward -= m_power*0.30  # less fuel spent is better, about -30 for heuristic landing
             reward -= s_power*0.03
 
-        print(self.fuel)
-
         done = False
-        if self.game_over or abs(state[0]) >= 1.0:
+        if self.game_over or pos.x < 0 or pos.x > VIEWPORT_W/SCALE: # If the lander flies off the screen to the left or right
             done = True
             reward = -100
         if not self.lander.awake:
@@ -388,6 +398,9 @@ class LunarLander(gym.Env, EzPickle):
                     path.append(path[0])
                     self.viewer.draw_polyline(path, color=obj.color2, linewidth=2)
 
+        if self.zone_move: # TODO: tweak how fast the zone moves if needed
+            self.helipad_x1 += 0.015 # TODO: is it possible to add a physical moving landing pad?
+            self.helipad_x2 += 0.015
         for x in [self.helipad_x1, self.helipad_x2]:
             flagy1 = self.helipad_y
             flagy2 = flagy1 + 50/SCALE
@@ -411,10 +424,14 @@ class LunarLanderRandomZone(LunarLander):
 
 class LunarLanderMoreRandStart(LunarLander):
     global INITIAL_RANDOM
+    # TODO: this is always changing the random value even if not using MoreRandStart
     INITIAL_RANDOM = 1500 # Probably not good practice to change a constant like this but just this once
 
 class LunarLanderLimitedFuel(LunarLander):
     limited_fuel = True
+
+class LunarLanderMovingZone(LunarLander):
+    zone_move = True
 
 def heuristic(env, s):
     """
