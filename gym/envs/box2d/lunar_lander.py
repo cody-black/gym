@@ -86,6 +86,8 @@ class LunarLander(gym.Env, EzPickle):
 
     continuous = False
     rand_zone = False
+    limited_fuel = False
+    fuel = 30 # Initial amount of fuel that the lander has. TODO: tweak this if needed
 
     def __init__(self):
         EzPickle.__init__(self)
@@ -267,7 +269,7 @@ class LunarLander(gym.Env, EzPickle):
         dispersion = [self.np_random.uniform(-1.0, +1.0) / SCALE for _ in range(2)]
 
         m_power = 0.0
-        if (self.continuous and action[0] > 0.0) or (not self.continuous and action == 2):
+        if (self.continuous and action[0] > 0.0) or (not self.continuous and action == 2 and self.fuel != 0):
             # Main engine
             if self.continuous:
                 m_power = (np.clip(action[0], 0.0,1.0) + 1.0)*0.5   # 0.5..1.0
@@ -290,7 +292,7 @@ class LunarLander(gym.Env, EzPickle):
                                            True)
 
         s_power = 0.0
-        if (self.continuous and np.abs(action[1]) > 0.5) or (not self.continuous and action in [1, 3]):
+        if (self.continuous and np.abs(action[1]) > 0.5) or (not self.continuous and action in [1, 3] and self.fuel != 0):
             # Orientation engines
             if self.continuous:
                 direction = np.sign(action[1])
@@ -337,8 +339,16 @@ class LunarLander(gym.Env, EzPickle):
             reward = shaping - self.prev_shaping
         self.prev_shaping = shaping
 
-        reward -= m_power*0.30  # less fuel spent is better, about -30 for heuristic landing
-        reward -= s_power*0.03
+        if self.limited_fuel:
+            self.fuel -= m_power*0.30 # How much fuel the thrusters use.
+            self.fuel -= s_power*0.03 # TODO: may need to tweak these values 
+            if self.fuel < 0:
+                self.fuel = 0 # Stop fuel from being negative
+        else:
+            reward -= m_power*0.30  # less fuel spent is better, about -30 for heuristic landing
+            reward -= s_power*0.03
+
+        print(self.fuel)
 
         done = False
         if self.game_over or abs(state[0]) >= 1.0:
@@ -402,6 +412,9 @@ class LunarLanderRandomZone(LunarLander):
 class LunarLanderMoreRandStart(LunarLander):
     global INITIAL_RANDOM
     INITIAL_RANDOM = 1500 # Probably not good practice to change a constant like this but just this once
+
+class LunarLanderLimitedFuel(LunarLander):
+    limited_fuel = True
 
 def heuristic(env, s):
     """

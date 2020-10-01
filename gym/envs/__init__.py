@@ -123,6 +123,13 @@ register(
 )
 
 register(
+    id='LunarLanderLimitedFuel-v2',
+    entry_point='gym.envs.box2d:LunarLanderLimitedFuel',
+    max_episode_steps=1000,
+    reward_threshold=200,
+)
+
+register(
     id='BipedalWalker-v3',
     entry_point='gym.envs.box2d:BipedalWalker',
     max_episode_steps=1600,
