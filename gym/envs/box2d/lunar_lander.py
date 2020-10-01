@@ -85,6 +85,7 @@ class LunarLander(gym.Env, EzPickle):
     }
 
     continuous = False
+    rand_zone = False
 
     def __init__(self):
         EzPickle.__init__(self)
@@ -141,14 +142,25 @@ class LunarLander(gym.Env, EzPickle):
         CHUNKS = 11
         height = self.np_random.uniform(0, H/2, size=(CHUNKS+1,))
         chunk_x = [W/(CHUNKS-1)*i for i in range(CHUNKS)]
-        self.helipad_x1 = chunk_x[CHUNKS//2-1]
-        self.helipad_x2 = chunk_x[CHUNKS//2+1]
+        if (self.rand_zone):
+            zone_left_i = self.np_random.randint(1, CHUNKS - 3)
+            zone_right_i = zone_left_i + 2
+        else:
+            zone_left_i = CHUNKS//2-1
+            zone_right_i = CHUNKS//2+1
+        # self.helipad_x1 = chunk_x[CHUNKS//2-1]
+        # self.helipad_x2 = chunk_x[CHUNKS//2+1]
+        self.helipad_x1 = chunk_x[zone_left_i]
+        self.helipad_x2 = chunk_x[zone_right_i]
         self.helipad_y = H/4
-        height[CHUNKS//2-2] = self.helipad_y
-        height[CHUNKS//2-1] = self.helipad_y
-        height[CHUNKS//2+0] = self.helipad_y
-        height[CHUNKS//2+1] = self.helipad_y
-        height[CHUNKS//2+2] = self.helipad_y
+
+        for i in range(zone_left_i - 1, zone_right_i + 2):
+            height[i] = self.helipad_y
+        # height[CHUNKS//2-2] = self.helipad_y
+        # height[CHUNKS//2-1] = self.helipad_y
+        # height[CHUNKS//2+0] = self.helipad_y
+        # height[CHUNKS//2+1] = self.helipad_y
+        # height[CHUNKS//2+2] = self.helipad_y
         smooth_y = [0.33*(height[i-1] + height[i+0] + height[i+1]) for i in range(CHUNKS)]
 
         self.moon = self.world.CreateStaticBody(shapes=edgeShape(vertices=[(0, 0), (W, 0)]))
@@ -304,7 +316,7 @@ class LunarLander(gym.Env, EzPickle):
         pos = self.lander.position
         vel = self.lander.linearVelocity
         state = [
-            (pos.x - VIEWPORT_W/SCALE/2) / (VIEWPORT_W/SCALE/2),
+            (pos.x - (self.helipad_x1 + self.helipad_x2)/2) / ((self.helipad_x1 + self.helipad_x2)/2),
             (pos.y - (self.helipad_y+LEG_DOWN/SCALE)) / (VIEWPORT_H/SCALE/2),
             vel.x*(VIEWPORT_W/SCALE/2)/FPS,
             vel.y*(VIEWPORT_H/SCALE/2)/FPS,
@@ -383,6 +395,9 @@ class LunarLander(gym.Env, EzPickle):
 
 class LunarLanderContinuous(LunarLander):
     continuous = True
+
+class LunarLanderRandomZone(LunarLander):
+    rand_zone = True
 
 def heuristic(env, s):
     """
