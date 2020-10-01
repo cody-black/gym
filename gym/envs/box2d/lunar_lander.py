@@ -89,6 +89,7 @@ class LunarLander(gym.Env, EzPickle):
     zone_move = False
     limited_fuel = False
     fuel = 30 # Initial amount of fuel that the lander has. TODO: tweak this if needed
+    rand_diff = 500
 
     def __init__(self):
         EzPickle.__init__(self)
@@ -205,8 +206,8 @@ class LunarLander(gym.Env, EzPickle):
         self.lander.color1 = (0.5, 0.4, 0.9)
         self.lander.color2 = (0.3, 0.3, 0.5)
         self.lander.ApplyForceToCenter( (
-            self.np_random.uniform(-INITIAL_RANDOM, INITIAL_RANDOM),
-            self.np_random.uniform(-INITIAL_RANDOM, INITIAL_RANDOM)
+            self.np_random.uniform(-(INITIAL_RANDOM + self.rand_diff), (INITIAL_RANDOM + self.rand_diff)),
+            self.np_random.uniform(-(INITIAL_RANDOM + self.rand_diff), (INITIAL_RANDOM + self.rand_diff))
             ), True)
 
         self.legs = []
@@ -423,9 +424,7 @@ class LunarLanderRandomZone(LunarLander):
     rand_zone = True
 
 class LunarLanderMoreRandStart(LunarLander):
-    global INITIAL_RANDOM
-    # TODO: this is always changing the random value even if not using MoreRandStart
-    INITIAL_RANDOM = 1500 # Probably not good practice to change a constant like this but just this once
+    rand_diff = 500 # Amount added to the maximum random starting velocity TODO: tweak as needed
 
 class LunarLanderLimitedFuel(LunarLander):
     limited_fuel = True
