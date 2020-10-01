@@ -109,7 +109,7 @@ register(
 )
 
 register(
-    id='LunarLanderRandomZone',
+    id='LunarLanderRandomZone-v2',
     entry_point='gym.envs.box2d:LunarLanderContinuous',
     max_episode_steps=1000,
     reward_threshold=200,
